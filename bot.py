@@ -2,7 +2,7 @@ import os, json
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, ContextTypes, filters
 
-BOT_TOKEN = os.getenv("8806861845:AAHly2w7sdDvOqY8tDKzZKrb6DAlhKVkdH8")
+BOT_TOKEN = os.getenv("8806861845:AAGPeXO2hP1Ax3JF55ch4mzt_zX35wENIFQ")
 OWNER_ID = 8695322804
 
 def load():
