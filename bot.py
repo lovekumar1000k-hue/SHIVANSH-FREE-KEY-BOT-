@@ -3,7 +3,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, ContextTypes, filters
 
 BOT_TOKEN = os.getenv("8806861845:AAHly2w7sdDvOqY8tDKzZKrb6DAlhKVkdH8")
-OWNER_ID = 7513572013
+OWNER_ID = 8695322804
 
 def load():
     try:
