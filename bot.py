@@ -2,10 +2,9 @@ import os
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 
-BOT_TOKEN = os.getenv("8806861845:AAGPeXO2hP1Ax3JF55ch4mzt_zX35wENIFQ")
-OWNER_ID = int(os.getenv(''8695322804", "0"))
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+OWNER_ID = int(os.getenv("OWNER_ID", "0"))
 
-# Sirf owner hi use kar paye
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != OWNER_ID:
         await update.message.reply_text("❌ Ye bot sirf owner ke liye hai.")
