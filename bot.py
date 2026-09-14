@@ -1,56 +1,76 @@
-import os, json
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
+import os
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, ContextTypes, filters
 
-TOKEN = os.environ.get("BOT_TOKEN") or "8806861845:AAHly2w7sdDvOqY8tDKzZKrb6DAlhKVkdH8"
-ADMIN_ID = 5965677114
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+ADMIN_ID = 0 # Yaha apni ID daal de @userinfobot se leke
 
-if os.path.exists("slots.json"):
-    with open("slots.json", 'r') as f:
-        slots = json.load(f)
-else:
-    slots = {str(i): "" for i in range(1, 8)}
+# Channel Links - yahi tu SLOT 1 se set karega
+CHANNELS = {
+    "Channel 1": None,
+    "Channel 2": None,
+    "Channel 3": None,
+}
+user_state = {}
 
-def save():
-    with open("slots.json", 'w') as f:
-        json.dump(slots, f)
+def main_keyboard():
+    buttons = []
+    # Channel 5,6,7 tere photo jaise
+    buttons.append([
+        InlineKeyboardButton("Channel 5", url=CHANNELS["Channel 1"] or "https://t.me/"),
+        InlineKeyboardButton("Channel 6", url=CHANNELS["Channel 2"] or "https://t.me/")
+    ])
+    buttons.append([InlineKeyboardButton("Channel 7", url=CHANNELS["Channel 3"] or "https://t.me/")])
+    buttons.append([InlineKeyboardButton("Check Joined", callback_data="check")])
+    buttons.append([InlineKeyboardButton("🔑 Get Key", callback_data="getkey")])
+    return InlineKeyboardMarkup(buttons)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    btns = []
-    for i in range(1, 8):
-        link = slots[str(i)]
-        if link:
-            btns.append([InlineKeyboardButton(f"Channel {i}", url=link)])
-    btns.append([InlineKeyboardButton("Check Joined", callback_data="check")])
-    btns.append([InlineKeyboardButton("🔑 Get Key", callback_data="getkey")])
-    await update.message.reply_text("👋 MR SANTU OFFICIAL\n\nSabhi Channel Join Karo fir Get Key dabao:", reply_markup=InlineKeyboardMarkup(btns))
+    await update.message.reply_text(
+        "MR SANTU OFICCIAL\nSabhi Channel Join Karo:",
+        reply_markup=main_keyboard()
+    )
 
-async def admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id!= ADMIN_ID: return
-    btns = [[InlineKeyboardButton(f"SLOT {i} - {slots[str(i)][:15] if slots[str(i)] else 'Empty'}", callback_data=f"set_{i}")] for i in range(1,8)]
-    await update.message.reply_text("Kis Slot me Link Lagana Hai? 👇", reply_markup=InlineKeyboardMarkup(btns))
+async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    uid = update.effective_user.id
+    text = update.message.text.strip()
 
-async def callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    q = update.callback_query
-    await q.answer()
-    if q.data.startswith("set_"):
-        no = q.data.split("_")[1]
-        context.user_data["wait_for"] = no
-        await q.message.reply_text(f"📌 Send Channel {no} Link Now")
-    elif q.data == "getkey":
-        await q.message.reply_text("🔑 Your Key: `DRIP-CLINE-KEY-1`")
+    # ADMIN PANEL - SLOT 1
+    if text.upper() == "SLOT 1":
+        user_state[uid] = "WAIT_CH_1"
+        await update.message.reply_text("📌 Send Channel 1 Link Now")
+        return
 
-async def save_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if "wait_for" in context.user_data:
-        no = context.user_data["wait_for"]
-        slots[no] = update.message.text.strip()
-        save()
-        await update.message.reply_text(f"✅ SLOT {no} me save ho gaya")
-        del context.user_data["wait_for"]
+    if uid in user_state:
+        state = user_state[uid]
+        if text.startswith("https://t.me/"):
+            if state == "WAIT_CH_1":
+                CHANNELS["Channel 1"] = text
+                user_state[uid] = "WAIT_CH_2"
+                await update.message.reply_text(f"✅ Channel 1 Set\n\n📌 Send Channel 2 Link Now")
+                return
+            elif state == "WAIT_CH_2":
+                CHANNELS["Channel 2"] = text
+                user_state[uid] = "WAIT_CH_3"
+                await update.message.reply_text(f"✅ Channel 2 Set\n\n📌 Send Channel 3 Link Now")
+                return
+            elif state == "WAIT_CH_3":
+                CHANNELS["Channel 3"] = text
+                user_state.pop(uid)
+                await update.message.reply_text(f"✅ Channel 3 Set\n\nAll Done! /start dabao", reply_markup=main_keyboard())
+                return
 
-app = Application.builder().token(TOKEN).build()
+async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    if query.data == "check":
+        await query.message.reply_text("✅ Checked! Sab channels joined hai.")
+    if query.data == "getkey":
+        await query.message.reply_text("✅ SLOT 1\n🔑 Your Key: DRIP-CLINE-KEY-1")
+
+app = Application.builder().token(BOT_TOKEN).build()
 app.add_handler(CommandHandler("start", start))
-app.add_handler(CommandHandler("admin", admin))
-app.add_handler(CallbackQueryHandler(callback))
-app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, save_link))
+app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, text_handler))
+app.add_handler(CallbackQueryHandler(callback_handler))
+print("Bot Started @free_key_all_panel_use_bot")
 app.run_polling()
